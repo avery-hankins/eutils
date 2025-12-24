@@ -191,4 +191,9 @@ mod tests {
 
         assert_eq!(split_extension(".log.txt"), ("".to_string(), ".log".to_string(), ".txt".to_string()));
     }
+
+    #[test]
+    fn test_split_directory() {
+        assert_eq!(split_extension("a/b/"), ("a".to_string(), "b".to_string(), "".to_string()));
+    }
 }
