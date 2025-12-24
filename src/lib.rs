@@ -7,24 +7,24 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug)]
 pub struct Preferences {
     warn_dangerous: bool,
-    pub file_formats: Vec<FileFormat>,
+    file_formats: Vec<FileFormat>,
 }
 
-pub type Command = String;
+type Command = String;
 
 // ie .png, .jpg, .mp4, .rs, .exe
-pub type FileType = String;
+type FileType = String;
 
 #[derive(Deserialize, Debug)]
-pub struct FileFormat {
-    pub name: String,
-    pub members: Vec<FileType>,
-    pub transformations: Vec<(String, Command)>,
+struct FileFormat {
+    name: String,
+    members: Vec<FileType>,
+    transformations: Vec<(String, Command)>,
 }
 
-pub const START_FILL: &str = "{s}";
-pub const END_FILL: &str = "{e}";
-pub const CONFIG_PATH: &str = ".config/eutils/preferences.json";
+const START_FILL: &str = "{s}";
+const END_FILL: &str = "{e}";
+const CONFIG_PATH: &str = ".config/eutils/preferences.json";
 
 pub fn get_config_path() -> std::path::PathBuf {
     let home = env::var("HOME").expect("HOME environment variable not set");
@@ -72,7 +72,7 @@ fn create_config(config_path: &std::path::Path) {
     std::fs::write(config_path, json_data).expect("Failed to write config file");
 }
 
-pub fn split_extension(file: &str) -> (String, String, FileType) {
+fn split_extension(file: &str) -> (String, String, FileType) {
     let path = std::path::Path::new(file);
 
     let name = path.parent()
@@ -117,6 +117,8 @@ pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, pref
     }
 
     let source_paths = source_files.into_iter().map(|s| split_extension(s));
+
+    let is_dest_dir = std::path::Path::new(dest).is_dir();
     let (end_path, end_name, end_extension) = split_extension(dest);
 
     for source in source_paths {
