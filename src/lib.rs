@@ -1,10 +1,12 @@
 use std::env;
 use std::process;
+use std::io::Write;
 
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct Preferences {
+    warn_dangerous: bool,
     pub file_formats: Vec<FileFormat>,
 }
 
@@ -45,6 +47,7 @@ pub fn parse_config(config_path: &std::path::Path) -> Preferences {
 
 fn create_config(config_path: &std::path::Path) {
     let json_data = r#"{
+    "warn_dangerous": true,
     "file_formats": [
         {
             "name": "image",
@@ -95,6 +98,24 @@ pub fn split_extension(file: &str) -> (String, String, FileType) {
 }
 
 pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, preferences: Preferences) {
+    if delete_source && preferences.warn_dangerous {
+        print!("This conversion may lose information in the source files. Are you sure you want to continue? (y/n): ");
+        std::io::stdout().flush().unwrap();
+
+        for line in std::io::stdin().lines() {
+            let line = line.unwrap();
+
+            if line.trim() == "y" || line.trim() == "Y" {
+                break;
+            } else if line.trim() == "n" || line.trim() == "N" {
+                return;
+            } else {
+                print!("Invalid character. Are you sure you want to continue? (y/n): ");
+                std::io::stdout().flush().unwrap();
+            }
+        }
+    }
+
     let source_paths = source_files.into_iter().map(|s| split_extension(s));
     let (end_path, end_name, end_extension) = split_extension(dest);
 
