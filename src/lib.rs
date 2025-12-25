@@ -151,8 +151,8 @@ pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, pref
         let command: &Command;
         match matched_commands.len() {
             1 => {command = matched_commands[0]},
-            0 => {panic!("No file format matched for: {start_extension}")},
-            _ => {panic!("Multiple file formats matched for: {start_extension}")},
+            0 => {panic!("No file format matched for: {end_extension}")},
+            _ => {panic!("Multiple file formats matched for: {end_extension}")},
         }
 
         // execute command
