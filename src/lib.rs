@@ -35,9 +35,8 @@ pub fn get_config_path() -> std::path::PathBuf {
 
 // TODO better handle unwraps
 pub fn parse_config(config_path: &std::path::Path) -> Preferences {
-    match config_path.try_exists().unwrap() {
-        false => create_config(config_path),
-        _ => ()
+    if !config_path.try_exists().unwrap() {
+        create_config(config_path);
     }
 
     let contents = std::fs::read_to_string(config_path).expect("Failed to read config file");
@@ -90,7 +89,7 @@ fn split_extension(file: &str) -> (String, String, FileType) {
                         .map(|ext| format!(".{}", ext))
                         .unwrap_or_default();
 
-    if extension.len() == 0 && &stem[0..1] == "." {
+    if extension.is_empty() && &stem[0..1] == "." {
         (name, extension, stem) // to deal with how these are extracted
     } else {
         (name, stem, extension)
@@ -116,7 +115,7 @@ pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, pref
         }
     }
 
-    let source_paths = source_files.into_iter().map(|s| split_extension(s));
+    let source_paths = source_files.iter().map(|s| split_extension(s));
 
     let is_dest_dir = std::path::Path::new(dest).is_dir();
     let (end_path, end_name, end_extension) = split_extension(dest);
@@ -163,7 +162,7 @@ pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, pref
         for arg in &split_command[1..] {
             let mapped_arg = match *arg {
                 START_FILL => format!("{}{}{}", start_parent, start_name, start_extension),
-                END_FILL if end_name.len() == 0 => format!("{}{}{}", end_path, start_name, end_extension),
+                END_FILL if end_name.is_empty() => format!("{}{}{}", end_path, start_name, end_extension),
                 END_FILL => format!("{}{}{}", end_path, end_name, end_extension),
                 _ => arg.to_string(),
             };
