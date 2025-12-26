@@ -115,13 +115,29 @@ pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, pref
         }
     }
 
-    let source_paths = source_files.iter().map(|s| split_extension(s));
-
     let is_dest_dir = std::path::Path::new(dest).is_dir();
+    if is_dest_dir {
+        for source in source_files {
+            let (_start_parent, start_name, start_extension) = split_extension(source);
+            let source_file = format!("{}{}", start_name, start_extension);
+
+            let dest_file = std::path::Path::new(dest).join(&source_file);
+
+            std::fs::copy(&source, dest_file).expect("Copy operation failed");
+            if delete_source {
+                std::fs::remove_file(&source).expect("Failed to delete source file");
+            }
+
+            continue;
+        }
+
+        return;
+    }
+
     let (end_path, end_name, end_extension) = split_extension(dest);
 
-    for source in source_paths {
-        let (start_parent, start_name, start_extension) = source;
+    for source in source_files {
+        let (start_parent, start_name, start_extension) = split_extension(source);
 
         // TODO cleanup fp hell
         let matched_formats: Vec<&FileFormat> = preferences.file_formats
