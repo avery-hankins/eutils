@@ -72,6 +72,10 @@ fn create_config(config_path: &std::path::Path) {
 }
 
 fn split_extension(file: &str) -> (String, String, FileType) {
+    if file == "." || file == ".." {
+        return (file.to_string(), "".to_string(), "".to_string());
+    }
+
     let path = std::path::Path::new(file);
 
     let name = path.parent()
@@ -96,22 +100,33 @@ fn split_extension(file: &str) -> (String, String, FileType) {
     }
 }
 
+/// # Returns
+/// Whether the user wants to quit the operation
+fn warn_user() -> bool {
+    print!("This conversion may lose information in the source files. Are you sure you want to continue? (y/n): ");
+    std::io::stdout().flush().unwrap();
+
+    for line in std::io::stdin().lines() {
+        let line = line.unwrap();
+
+        if line.trim() == "y" || line.trim() == "Y" {
+            return true;
+        } else if line.trim() == "n" || line.trim() == "N" {
+            return false;
+        } else {
+            print!("Invalid character. Are you sure you want to continue? (y/n): ");
+            std::io::stdout().flush().unwrap();
+        }
+    }
+
+    return false; // TODO Should be result err?
+}
+
 pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, preferences: Preferences) {
     if delete_source && preferences.warn_dangerous {
-        print!("This conversion may lose information in the source files. Are you sure you want to continue? (y/n): ");
-        std::io::stdout().flush().unwrap();
-
-        for line in std::io::stdin().lines() {
-            let line = line.unwrap();
-
-            if line.trim() == "y" || line.trim() == "Y" {
-                break;
-            } else if line.trim() == "n" || line.trim() == "N" {
-                return;
-            } else {
-                print!("Invalid character. Are you sure you want to continue? (y/n): ");
-                std::io::stdout().flush().unwrap();
-            }
+        match warn_user() {
+            true => {}, // do nothing
+            false => {return}
         }
     }
 
