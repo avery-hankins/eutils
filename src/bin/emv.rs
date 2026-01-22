@@ -12,8 +12,8 @@ fn main() {
     let config_path = get_config_path();
     let preferences = parse_config(&config_path);
 
-    let source_files = &args[1..args.len()-1];
-    let destination = &args[args.len() - 1];
+    let source_files = &args[1..args.len()-1]; // all args except last
+    let destination = &args.last().expect("Should have destination argument!");
 
     execute_on(source_files, destination, true, preferences);
 }
