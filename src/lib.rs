@@ -27,7 +27,7 @@ const END_FILL: &str = "{e}";
 const CONFIG_PATH: &str = ".config/eutils/preferences.json";
 
 pub fn get_config_path() -> std::path::PathBuf {
-    let home = env::var("HOME").expect("HOME environment variable not set");
+    let home = env::var("HOME").expect("HOME environment should be set");
     std::path::Path::new(&home).join(CONFIG_PATH)
 }
 
@@ -39,9 +39,9 @@ pub fn parse_config(config_path: &std::path::Path) -> Preferences {
         create_config(config_path);
     }
 
-    let contents = std::fs::read_to_string(config_path).expect("Failed to read config file");
+    let contents = std::fs::read_to_string(config_path).expect("Config path should exist");
 
-    serde_json::from_str(&contents).expect("Failed to parse config file")
+    serde_json::from_str(&contents).expect("Config file should be parseable. Syntax error?")
 }
 
 fn create_config(config_path: &std::path::Path) {
@@ -66,9 +66,9 @@ fn create_config(config_path: &std::path::Path) {
 }"#;
 
     if let Some(parent) = config_path.parent() {
-        std::fs::create_dir_all(parent).expect("Failed to create config directory");
+        std::fs::create_dir_all(parent).expect("Should be able to create directory");
     }
-    std::fs::write(config_path, json_data).expect("Failed to write config file");
+    std::fs::write(config_path, json_data).expect("Should be able to create config_file");
 }
 
 fn split_extension(file: &str) -> (String, String, FileType) {
@@ -171,9 +171,9 @@ pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, pref
 
         // No conversion needed - use filesystem copy
         if start_extension == target_extension {
-            std::fs::copy(source, &dest_file).expect("Copy operation failed");
+            std::fs::copy(source, &dest_file).expect("Should be able to copy file");
             if delete_source {
-                std::fs::remove_file(source).expect("Failed to delete source file");
+                std::fs::remove_file(source).expect("Should be able to delete source file");
             }
             continue;
         }
@@ -224,9 +224,9 @@ pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, pref
             exe_com = exe_com.arg(mapped_arg);
         }
 
-        let status = exe_com.status().expect("Command failed to execute");
+        let status = exe_com.status().expect("Should be able to execute specified command");
         if status.success() && delete_source {
-            std::fs::remove_file(source).expect("Failed to delete source file");
+            std::fs::remove_file(source).expect("Should be able to delete source file");
         }
     }
 }
