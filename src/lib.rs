@@ -130,35 +130,59 @@ pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, pref
         }
     }
 
+    let (end_path, end_name, end_extension) = split_extension(dest);
     let is_dest_dir = std::path::Path::new(dest).is_dir();
-    if is_dest_dir {
-        for source in source_files {
-            let (_start_parent, start_name, start_extension) = split_extension(source);
-            let source_file = format!("{}{}", start_name, start_extension);
 
-            let dest_file = std::path::Path::new(dest).join(&source_file);
+    for source in source_files {
+        let (_start_parent, start_name, start_extension) = split_extension(source);
 
-            std::fs::copy(&source, dest_file).expect("Copy operation failed");
+        // Compute destination file path and target extension
+        let (dest_file, target_extension): (String, String) = if is_dest_dir {
+            // Destination is an existing directory - keep original extension
+            let df = std::path::Path::new(dest)
+                .join(format!("{}{}", start_name, start_extension))
+                .to_string_lossy()
+                .to_string();
+            (df, start_extension.clone())
+        } else if end_name.is_empty() {
+            // No dest name: e.g., "dir1/.png" or ".webp" or "dir1/"
+            let ext = if end_extension.is_empty() { start_extension.clone() } else { end_extension.clone() };
+            let df = if end_path.is_empty() {
+                format!("{}{}", start_name, ext)
+            } else {
+                std::path::Path::new(&end_path)
+                    .join(format!("{}{}", start_name, ext))
+                    .to_string_lossy()
+                    .to_string()
+            };
+            (df, ext)
+        } else {
+            // Full destination path with name
+            let df = if end_path.is_empty() {
+                format!("{}{}", end_name, end_extension)
+            } else {
+                std::path::Path::new(&end_path)
+                    .join(format!("{}{}", end_name, end_extension))
+                    .to_string_lossy()
+                    .to_string()
+            };
+            (df, end_extension.clone())
+        };
+
+        // No conversion needed - use filesystem copy
+        if start_extension == target_extension {
+            std::fs::copy(source, &dest_file).expect("Copy operation failed");
             if delete_source {
-                std::fs::remove_file(&source).expect("Failed to delete source file");
+                std::fs::remove_file(source).expect("Failed to delete source file");
             }
-
             continue;
         }
 
-        return;
-    }
-
-    let (end_path, end_name, end_extension) = split_extension(dest);
-
-    for source in source_files {
-        let (start_parent, start_name, start_extension) = split_extension(source);
-
-        // TODO cleanup fp hell
+        // Conversion needed - look up transformation
         let matched_formats: Vec<&FileFormat> = preferences.file_formats
-                                                           .iter()
-                                                           .filter(|s| s.members.iter().any(|extension| start_extension == **extension))
-                                                           .collect();
+            .iter()
+            .filter(|s| s.members.iter().any(|extension| start_extension == **extension))
+            .collect();
 
         let format: &FileFormat;
         match matched_formats.len() {
@@ -168,33 +192,32 @@ pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, pref
         }
 
         let matched_commands: Vec<&Command> = format.transformations
-                                                    .iter()
-                                                    .filter(|(target_name, _)| {
-                                                        preferences.file_formats
-                                                            .iter()
-                                                            .find(|f| &f.name == target_name)
-                                                            .map(|f| f.members.iter().any(|ext| end_extension == **ext))
-                                                            .unwrap_or(false)
-                                                    })
-                                                    .map(|(_, cmd)| cmd)
-                                                    .collect();
+            .iter()
+            .filter(|(target_name, _)| {
+                preferences.file_formats
+                    .iter()
+                    .find(|f| &f.name == target_name)
+                    .map(|f| f.members.iter().any(|ext| target_extension == **ext))
+                    .unwrap_or(false)
+            })
+            .map(|(_, cmd)| cmd)
+            .collect();
 
         let command: &Command;
         match matched_commands.len() {
             1 => {command = matched_commands[0]},
-            0 => {panic!("No file format matched for: {end_extension}")},
-            _ => {panic!("Multiple file formats matched for: {end_extension}")},
+            0 => {panic!("No file format matched for: {target_extension}")},
+            _ => {panic!("Multiple file formats matched for: {target_extension}")},
         }
 
         // execute command
         let split_command: Vec<&str> = command.split(" ").collect();
         let mut exe_com = &mut process::Command::new(split_command[0]);
-        
+
         for arg in &split_command[1..] {
             let mapped_arg = match *arg {
-                START_FILL => format!("{}{}{}", start_parent, start_name, start_extension),
-                END_FILL if end_name.is_empty() => format!("{}{}{}", end_path, start_name, end_extension),
-                END_FILL => format!("{}{}{}", end_path, end_name, end_extension),
+                START_FILL => source.to_string(),
+                END_FILL => dest_file.clone(),
                 _ => arg.to_string(),
             };
 
@@ -203,8 +226,7 @@ pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, pref
 
         let status = exe_com.status().expect("Command failed to execute");
         if status.success() && delete_source {
-            let source_path = format!("{}{}{}", start_parent, start_name, start_extension);
-            std::fs::remove_file(&source_path).expect("Failed to delete source file");
+            std::fs::remove_file(source).expect("Failed to delete source file");
         }
     }
 }
