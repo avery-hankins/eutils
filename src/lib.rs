@@ -119,7 +119,7 @@ fn warn_user() -> bool {
         }
     }
 
-    return false; // TODO Should be result err?
+    panic!("unable to warn user");
 }
 
 pub fn execute_on(source_files: &[String], dest: &str, delete_source: bool, preferences: Preferences) {
