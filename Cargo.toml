@@ -2,6 +2,9 @@
 name = "eutils"
 version = "0.1.0"
 edition = "2024"
+description = "copy and move tool with automatic file conversions."
+license = "MIT"
+repository = "https://github.com/avery-hankins/eutils"
 
 [dependencies]
 serde = { version = "1.0.228", features = ["derive"] }
