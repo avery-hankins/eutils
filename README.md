@@ -33,6 +33,7 @@ And the following command will create png thumbnails for all the videos in the c
 `ecp *.mp4 .png`
 
 ## Usage
+
 `ecp` and `emv` can be used similarly to `cp` and `mv` in most respects. The following are all valid:
 - `emv img.webp dir1`, moves img.webp to dir1, no conversion
 - `emv img.webp dir1/img.png`, moves img.webp to dir1/img.png, converting to img.png
@@ -42,7 +43,8 @@ And the following command will create png thumbnails for all the videos in the c
 
 Config file location: `~/.config/eutils/preferences.json` (created automatically on first run)
 
-### Placeholders
+### Placeholder Values
+
 - `{s}` - source file path
 - `{e}` - destination file path (with new extension)
 
@@ -57,6 +59,7 @@ The utilities themselves have no runtime dependencies, but your transformations 
 `cargo install eutils`
 
 ## TODO
+
 - Replicate major `cp` and `mv` flags
 
 ## License
